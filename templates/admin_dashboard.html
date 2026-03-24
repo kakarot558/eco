@@ -1,0 +1,215 @@
+{% extends "admin_base.html" %}
+{% block title %}Dashboard — AgriFortress{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Stat Row -->
+<div class="stat-row">
+  <div class="stat-card sc-g">
+    <div class="stat-ico">📦</div>
+    <div>
+      <div class="stat-n">{{ total_products }}</div>
+      <div class="stat-lbl">Total Products</div>
+      <div class="stat-sub">{{ active_products }} active</div>
+    </div>
+  </div>
+  <div class="stat-card sc-a">
+    <div class="stat-ico">🏷️</div>
+    <div>
+      <div class="stat-n">{{ discounted }}</div>
+      <div class="stat-lbl">On Discount</div>
+      <div class="stat-sub">{{ active_campaigns }} active campaign{{ 's' if active_campaigns != 1 }}</div>
+    </div>
+  </div>
+  <div class="stat-card sc-r">
+    <div class="stat-ico">⚠️</div>
+    <div>
+      <div class="stat-n">{{ low_stock }}</div>
+      <div class="stat-lbl">Low Stock</div>
+      <div class="stat-sub">Needs reorder</div>
+    </div>
+  </div>
+  <div class="stat-card sc-b">
+    <div class="stat-ico">📣</div>
+    <div>
+      <div class="stat-n">{{ fb_success }}</div>
+      <div class="stat-lbl">FB Posts</div>
+      <div class="stat-sub">{{ fb_failed }} failed</div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Chart + Low stock -->
+<div class="two-col mb-3">
+
+  <div class="ag-card" style="margin-bottom:0">
+    <div class="ag-card-head">
+      <h6 class="ag-card-title"><i class="bi bi-pie-chart-fill"></i> Products by Category</h6>
+    </div>
+    <div class="ag-card-body">
+      {% if cat_data %}
+      <div style="position:relative;height:240px;">
+        <canvas id="catChart"></canvas>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:50px 0;color:var(--ink4);">
+        <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.4;"></i>
+        No products yet.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="ag-card" style="margin-bottom:0">
+    <div class="ag-card-head">
+      <h6 class="ag-card-title">
+        <i class="bi bi-exclamation-triangle-fill" style="color:var(--amb);"></i>
+        Low Stock
+      </h6>
+      <a href="{{ url_for('admin_products') }}" class="btn-o sm">View All</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ag-tbl">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Cat.</th>
+            <th>Stock</th>
+            <th>Min</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in low_stock_products %}
+          <tr>
+            <td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ p.name[:32] }}{% if p.name|length > 32 %}…{% endif %}
+            </td>
+            <td>
+              <span class="cat-pill cp-{{ p.category|lower|replace(' ','-') }}">{{ p.category }}</span>
+            </td>
+            <td>
+              <span style="font-weight:700;color:{% if p.stock_quantity == 0 %}var(--red){% else %}var(--amb){% endif %};">
+                {{ p.stock_quantity }}
+              </span>
+            </td>
+            <td style="color:var(--ink4);font-size:.8rem;">{{ p.stock_threshold }}</td>
+            <td>
+              <a href="{{ url_for('edit_product', product_id=p.id) }}" class="btn-o sm">Edit</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align:center;padding:28px;color:var(--ink4);">
+              ✅ All stock levels healthy
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 3: Logs + FB posts -->
+<div class="three-col">
+
+  <div class="ag-card" style="margin-bottom:0">
+    <div class="ag-card-head">
+      <h6 class="ag-card-title"><i class="bi bi-activity"></i> Automation Logs</h6>
+      <a href="{{ url_for('admin_logs') }}" class="btn-o sm">View All</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ag-tbl">
+        <thead>
+          <tr><th>Event</th><th>Status</th><th>Message</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logs %}
+          <tr>
+            <td><span class="ev-code">{{ log.event_type }}</span></td>
+            <td><span class="ls ls-{{ log.status }}">{{ log.status }}</span></td>
+            <td style="font-size:.79rem;color:var(--ink3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ log.message[:55] if log.message else '—' }}
+            </td>
+            <td style="font-size:.76rem;color:var(--ink4);white-space:nowrap;">
+              {{ log.timestamp.strftime('%m/%d %H:%M') }}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--ink4);">No logs yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ag-card" style="margin-bottom:0">
+    <div class="ag-card-head">
+      <h6 class="ag-card-title">
+        <i class="bi bi-facebook" style="color:#1877f2;"></i> FB Posts
+      </h6>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ag-tbl">
+        <thead>
+          <tr><th>Product</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for fb in recent_fb %}
+          <tr>
+            <td style="font-size:.8rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ fb.product.name[:26] if fb.product else 'N/A' }}
+            </td>
+            <td><span class="ls ls-{{ fb.status }}">{{ fb.status }}</span></td>
+            <td style="font-size:.76rem;color:var(--ink4);white-space:nowrap;">
+              {{ fb.created_at.strftime('%m/%d %H:%M') }}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:24px;color:var(--ink4);">No posts yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  var ctx = document.getElementById('catChart');
+  if (!ctx) return;
+  var labels = {{ cat_data | map(attribute=0) | list | tojson }};
+  var values = {{ cat_data | map(attribute=1) | list | tojson }};
+  if (!labels.length) return;
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: ['#1a7a34','#f4a24b','#3b8fd4','#e05c54','#8b5cf6','#14b8a6','#f59e0b'],
+        borderWidth: 3, borderColor: '#fff', hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ padding:14, usePointStyle:true, font:{ size:11 } } },
+        tooltip: { callbacks: { label: function(c) {
+          var t = c.dataset.data.reduce(function(a,b){return a+b;},0);
+          return ' '+c.label+': '+c.parsed+' ('+Math.round(c.parsed/t*100)+'%)';
+        }}}
+      },
+      cutout: '62%'
+    }
+  });
+})();
+</script>
+{% endblock %}

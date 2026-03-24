@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Login — AgriFortress</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{
+      font-family:'DM Sans',system-ui,sans-serif;
+      min-height:100vh; margin:0;
+      background: linear-gradient(135deg,#0d1c0f 0%,#143318 40%,#0a2210 100%);
+      display:flex; align-items:center; justify-content:center;
+      padding:20px;
+    }
+
+    /* Background pattern */
+    body::before{
+      content:'';
+      position:fixed; inset:0;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(26,122,52,.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(74,222,128,.08) 0%, transparent 50%);
+      pointer-events:none;
+    }
+
+    .login-wrap{
+      width:100%; max-width:420px;
+      position:relative; z-index:1;
+    }
+
+    /* Header */
+    .login-brand{
+      text-align:center; margin-bottom:28px;
+    }
+    .login-logo{
+      width:60px; height:60px; border-radius:18px;
+      background:linear-gradient(135deg,#1a7a34,#28a84a);
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:1.8rem; margin-bottom:14px;
+      box-shadow: 0 4px 20px rgba(26,122,52,.5);
+    }
+    .login-name{
+      font-family:'Playfair Display',serif;
+      color:#fff; font-size:1.6rem; font-weight:800; line-height:1;
+    }
+    .login-name em { color:#4ade80; font-style:normal; }
+    .login-sub{
+      color:rgba(255,255,255,.45); font-size:.8rem;
+      text-transform:uppercase; letter-spacing:.1em; margin-top:4px;
+    }
+
+    /* Card */
+    .login-card{
+      background:#fff;
+      border-radius:18px;
+      padding:32px 32px 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.1);
+    }
+
+    .login-field{ margin-bottom:16px; }
+    .login-label{
+      display:block; font-size:.78rem; font-weight:700;
+      color:#2a3d2c; margin-bottom:5px;
+    }
+    .login-input{
+      border:1.5px solid #dce8dc; border-radius:9px;
+      padding:10px 13px; font-size:.9rem; font-family:inherit;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .login-input:focus{
+      border-color:#1a7a34;
+      box-shadow: 0 0 0 3px rgba(26,122,52,.12);
+      outline:none;
+    }
+
+    .btn-login{
+      background:linear-gradient(135deg,#1a7a34,#22913e);
+      color:#fff; border:none; border-radius:10px;
+      font-weight:700; font-size:.9rem;
+      padding:12px; cursor:pointer; font-family:inherit;
+      transition:transform .14s, box-shadow .14s;
+      box-shadow: 0 3px 12px rgba(26,122,52,.35);
+    }
+    .btn-login:hover{
+      transform:translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26,122,52,.45);
+    }
+    .btn-login:active{ transform:translateY(0); }
+
+    .login-footer{
+      text-align:center; margin-top:16px;
+      font-size:.78rem; color:#8aa48c;
+    }
+    .login-footer a{ color:#1a7a34; text-decoration:none; font-weight:600; }
+    .login-footer a:hover{ text-decoration:underline; }
+
+    .alert{
+      border-radius:9px; font-size:.855rem; font-weight:500; border:none;
+      margin-bottom:16px;
+    }
+    .alert-danger  { background:#fee2e2; color:#7f1d1d; border-left:4px solid #be3a2e; }
+    .alert-success { background:#e3f2e8; color:#14532d; border-left:4px solid #1a7a34; }
+    .alert-warning { background:#fef3c7; color:#78350f; border-left:4px solid #b45309; }
+    .alert-info    { background:#dbeafe; color:#1e3a5f; border-left:4px solid #1a5fa6; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+
+  <div class="login-brand">
+    <div class="login-logo">🌾</div>
+    <div class="login-name">Agri<em>Fortress</em></div>
+    <div class="login-sub">Administration Portal</div>
+  </div>
+
+  <div class="login-card">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'danger' if cat == 'error' else cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="login-field">
+        <label class="login-label"><i class="bi bi-person me-1"></i>Username</label>
+        <input type="text" name="username" class="form-control login-input w-100"
+               placeholder="Enter username" required autocomplete="username">
+      </div>
+
+      <div class="login-field">
+        <label class="login-label"><i class="bi bi-lock me-1"></i>Password</label>
+        <div class="input-group">
+          <input type="password" name="password" class="form-control login-input"
+                 placeholder="Enter password" required
+                 autocomplete="current-password" id="pwdInput"
+                 style="border-radius:9px 0 0 9px!important;">
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePwd()"
+                  style="border-radius:0 9px 9px 0;border-left:none;">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login w-100 mt-2">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+
+    <div class="login-footer mt-3">
+      <a href="{{ url_for('index') }}"><i class="bi bi-arrow-left me-1"></i>Back to Store</a>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePwd() {
+  var p = document.getElementById('pwdInput');
+  var i = document.getElementById('eyeIcon');
+  if (p.type === 'password') { p.type = 'text';     i.className = 'bi bi-eye-slash'; }
+  else                        { p.type = 'password'; i.className = 'bi bi-eye'; }
+}
+</script>
+</body>
+</html>

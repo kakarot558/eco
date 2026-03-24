@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}AgriFortress Supply Co. — Premium Agricultural Products{% endblock %}
+{% block content %}
+
+<!-- Hero Banner -->
+<section class="hero-banner">
+    <div class="hero-particles"></div>
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-badge">🌾 Trusted by Filipino Farmers</div>
+            <h1 class="hero-title">Grow More.<br><em>Earn More.</em></h1>
+            <p class="hero-sub">Premium seeds, fertilizers, tools & equipment for a bountiful harvest.</p>
+            <div class="hero-actions">
+                <a href="#products" class="btn btn-hero-primary">Shop Now <i class="bi bi-arrow-down"></i></a>
+                <a href="{{ url_for('index', discounted='1') }}" class="btn btn-hero-sale">🔥 View Sales</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item"><strong>500+</strong><span>Products</span></div>
+                <div class="stat-item"><strong>10K+</strong><span>Farmers Served</span></div>
+                <div class="stat-item"><strong>98%</strong><span>Satisfaction</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-wave">
+        <svg viewBox="0 0 1200 80" preserveAspectRatio="none"><path d="M0,40 C300,80 900,0 1200,40 L1200,80 L0,80 Z" fill="#f8faf4"/></svg>
+    </div>
+</section>
+
+<!-- Featured / On Sale -->
+{% if featured %}
+<section class="featured-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">🔥 Hot Deals</span>
+            <h2 class="section-title">Special Offers</h2>
+            <p class="section-sub">Exclusive discounts for this season</p>
+        </div>
+        <div class="row g-4">
+            {% for product in featured %}
+            <div class="col-md-4">
+                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="featured-card-link">
+                    <div class="featured-card">
+                        <div class="featured-badge">-{{ product.discount_percentage|int }}%</div>
+                        <div class="featured-img-wrap no-select">
+                            {% if product.image_path %}
+                            <img src="/api/placeholder/400/250" 
+                                 data-product-id="{{ product.id }}"
+                                 class="featured-img secure-img no-drag"
+                                 alt="{{ product.name }}"
+                                 oncontextmenu="return false;"
+                                 draggable="false">
+                            {% else %}
+                            <div class="featured-no-img">
+                                {% if product.category == 'Seeds' %}🌱
+                                {% elif product.category == 'Fertilizer' %}🧪
+                                {% elif product.category == 'Equipment' %}🚜
+                                {% else %}🔧{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="featured-info">
+                            <span class="featured-cat">{{ product.category }}</span>
+                            <h3 class="featured-name">{{ product.name }}</h3>
+                            <div class="featured-price">
+                                <span class="price-now">₱{{ "%.2f"|format(product.discounted_price) }}</span>
+                                <span class="price-was">₱{{ "%.2f"|format(product.original_price) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Category Quick Access -->
+<section class="category-nav-section">
+    <div class="container">
+        <div class="row g-3 justify-content-center">
+            <div class="col-6 col-md-3">
+                <a href="{{ url_for('index', category='Seeds') }}" class="cat-nav-card seeds">
+                    <span class="cat-icon">🌱</span>
+                    <span class="cat-label">Seeds</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="{{ url_for('index', category='Fertilizer') }}" class="cat-nav-card fertilizer">
+                    <span class="cat-icon">🧪</span>
+                    <span class="cat-label">Fertilizer</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="{{ url_for('index', category='Tools') }}" class="cat-nav-card tools">
+                    <span class="cat-icon">🔧</span>
+                    <span class="cat-label">Tools</span>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="{{ url_for('index', category='Equipment') }}" class="cat-nav-card equipment">
+                    <span class="cat-icon">🚜</span>
+                    <span class="cat-label">Equipment</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="products-section" id="products">
+    <div class="container">
+        <div class="row">
+            <!-- Filters Sidebar -->
+            <div class="col-lg-3 mb-4">
+                <div class="filter-card">
+                    <h5 class="filter-title"><i class="bi bi-funnel"></i> Filter Products</h5>
+                    <form method="GET" action="{{ url_for('index') }}" id="filterForm">
+                        <div class="filter-group">
+                            <label class="filter-label">Category</label>
+                            <select name="category" class="form-select filter-select" onchange="this.form.submit()">
+                                <option value="">All Categories</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat[0] }}" {% if current_filters.category == cat[0] %}selected{% endif %}>{{ cat[0] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Crop Type</label>
+                            <select name="crop" class="form-select filter-select" onchange="this.form.submit()">
+                                <option value="">All Crops</option>
+                                {% for crop in crops %}
+                                {% if crop[0] %}
+                                <option value="{{ crop[0] }}" {% if current_filters.crop == crop[0] %}selected{% endif %}>{{ crop[0] }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Season</label>
+                            <select name="season" class="form-select filter-select" onchange="this.form.submit()">
+                                <option value="">All Seasons</option>
+                                {% for s in seasons %}
+                                {% if s[0] %}
+                                <option value="{{ s[0] }}" {% if current_filters.season == s[0] %}selected{% endif %}>{{ s[0] }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <div class="form-check filter-check">
+                                <input class="form-check-input" type="checkbox" name="discounted" value="1"
+                                       id="chkDiscount" {% if current_filters.discounted %}checked{% endif %} onchange="this.form.submit()">
+                                <label class="form-check-label" for="chkDiscount">🏷️ On Sale Only</label>
+                            </div>
+                            <div class="form-check filter-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="in_stock" value="1"
+                                       id="chkStock" {% if current_filters.in_stock %}checked{% endif %} onchange="this.form.submit()">
+                                <label class="form-check-label" for="chkStock">✅ In Stock Only</label>
+                            </div>
+                        </div>
+                        {% if current_filters.category or current_filters.crop or current_filters.discounted or current_filters.in_stock %}
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="col-lg-9">
+                <div class="products-header">
+                    <p class="products-count">
+                        Showing <strong>{{ products.total }}</strong> products
+                        {% if current_filters.category %}in <strong>{{ current_filters.category }}</strong>{% endif %}
+                    </p>
+                </div>
+
+                {% if products.items %}
+                <div class="row g-4" id="productsGrid">
+                    {% for product in products.items %}
+                    <div class="col-sm-6 col-xl-4 product-item">
+                        <div class="product-card {% if product.is_low_stock %}low-stock-card{% endif %}">
+                            {% if product.discount_percentage > 0 %}
+                            <div class="product-discount-badge">-{{ product.discount_percentage|int }}%</div>
+                            {% endif %}
+                            {% if product.is_low_stock %}
+                            <div class="product-lowstock-badge">⚠️ Low Stock</div>
+                            {% endif %}
+
+                            <div class="product-img-wrap no-select" oncontextmenu="return false;">
+                                {% if product.image_path %}
+                                <img src="/api/placeholder/300/200"
+                                     data-product-id="{{ product.id }}"
+                                     class="product-img secure-img no-drag"
+                                     alt="{{ product.name }}"
+                                     oncontextmenu="return false;"
+                                     draggable="false">
+                                {% else %}
+                                <div class="product-no-img">
+                                    {% if product.category == 'Seeds' %}🌱
+                                    {% elif product.category == 'Fertilizer' %}🧪
+                                    {% elif product.category == 'Equipment' %}🚜
+                                    {% else %}🔧{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="product-body">
+                                <div class="product-meta">
+                                    <span class="product-cat cat-{{ product.category|lower|replace(' ', '-') }}">{{ product.category }}</span>
+                                    {% if product.crop_type %}
+                                    <span class="product-crop">🌾 {{ product.crop_type }}</span>
+                                    {% endif %}
+                                </div>
+                                <h3 class="product-name">{{ product.name }}</h3>
+                                {% if product.description %}
+                                <p class="product-desc">{{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}</p>
+                                {% endif %}
+                                <div class="product-price-row">
+                                    {% if product.discount_percentage > 0 %}
+                                    <span class="price-current">₱{{ "%.2f"|format(product.discounted_price) }}</span>
+                                    <span class="price-original">₱{{ "%.2f"|format(product.original_price) }}</span>
+                                    {% else %}
+                                    <span class="price-current">₱{{ "%.2f"|format(product.price) }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if product.packaging_type %}
+                                <p class="product-pack"><i class="bi bi-box"></i> {{ product.packaging_type }}</p>
+                                {% endif %}
+                                <div class="product-stock-bar">
+                                    <div class="stock-fill {% if product.is_low_stock %}stock-low{% endif %}"
+                                         style="width: {{ [100, (product.stock_quantity / (product.stock_threshold * 5) * 100)|int]|min }}%"></div>
+                                </div>
+                                <p class="stock-text {% if product.is_low_stock %}text-danger{% endif %}">
+                                    {{ product.stock_quantity }} in stock
+                                    {% if product.is_low_stock %}⚠️{% endif %}
+                                </p>
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-product-view">
+                                    View Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if products.pages > 1 %}
+                <nav class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if products.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('index', page=products.prev_num, **current_filters) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% for page_num in products.iter_pages() %}
+                        {% if page_num %}
+                        <li class="page-item {% if page_num == products.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('index', page=page_num, **current_filters) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                        {% endfor %}
+                        {% if products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('index', page=products.next_num, **current_filters) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🌾</div>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your filters or <a href="{{ url_for('index') }}">view all products</a>.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

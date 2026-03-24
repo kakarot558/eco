@@ -1,0 +1,93 @@
+{% extends "admin_base.html" %}
+{% block title %}New Campaign — AgriFortress{% endblock %}
+{% block page_title %}New Campaign{% endblock %}
+
+{% block content %}
+<div style="max-width:660px;">
+  <div class="ag-card">
+    <div class="ag-card-head">
+      <h6 class="ag-card-title"><i class="bi bi-megaphone-fill"></i> Create Campaign</h6>
+      <a href="{{ url_for('admin_campaigns') }}" class="btn-o sm">
+        <i class="bi bi-arrow-left"></i> Back
+      </a>
+    </div>
+    <div class="ag-card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+
+          <div class="col-12">
+            <label class="ag-label">Campaign Name <span class="req">*</span></label>
+            <input type="text" name="name" class="form-control" required
+                   placeholder="e.g. Planting Season Kickoff 2024">
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">Campaign Type</label>
+            <select name="type" class="form-select">
+              <option value="Planting Season">🌱 Planting Season</option>
+              <option value="Harvest Sale">🌾 Harvest Sale</option>
+              <option value="Flash Sale">⚡ Flash Sale</option>
+              <option value="Fertilizer Month">🧪 Fertilizer Month</option>
+              <option value="Equipment Clearance">🚜 Equipment Clearance</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">Discount % <span class="req">*</span></label>
+            <input type="number" name="discount_percentage" class="form-control"
+                   min="1" max="100" required placeholder="15">
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">Start Date &amp; Time <span class="req">*</span></label>
+            <input type="datetime-local" name="start_date" class="form-control" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">End Date &amp; Time <span class="req">*</span></label>
+            <input type="datetime-local" name="end_date" class="form-control" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">Target Category</label>
+            <select name="category_target" class="form-select">
+              <option value="">All Categories</option>
+              <option>Seeds</option>
+              <option>Fertilizer</option>
+              <option>Tools</option>
+              <option>Equipment</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="ag-label">Target Crop (optional)</label>
+            <input type="text" name="crop_target" class="form-control"
+                   placeholder="e.g. Rice, Corn">
+          </div>
+
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="auto_post"
+                     id="autoPost" checked>
+              <label class="form-check-label" for="autoPost"
+                     style="font-size:.875rem;font-weight:600;color:var(--ink2);">
+                <i class="bi bi-facebook text-primary"></i>
+                Auto-post to Facebook when activated
+              </label>
+            </div>
+          </div>
+
+          <div class="col-12 d-flex gap-2 pt-1">
+            <button type="submit" class="btn-p">
+              <i class="bi bi-check-lg"></i> Create Campaign
+            </button>
+            <a href="{{ url_for('admin_campaigns') }}" class="btn-o">Cancel</a>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

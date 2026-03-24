@@ -1,0 +1,287 @@
+{% extends "admin_base.html" %}
+{% block title %}Scheduled Posts — AgriFortress{% endblock %}
+{% block page_title %}Scheduled Posts{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="stat-row">
+  <div class="stat-card sc-b">
+    <div class="stat-ico">📅</div>
+    <div>
+      <div class="stat-n">{{ scheduled|selectattr('post_status','equalto','scheduled')|list|length }}</div>
+      <div class="stat-lbl">Pending</div>
+    </div>
+  </div>
+  <div class="stat-card sc-g">
+    <div class="stat-ico">✅</div>
+    <div>
+      <div class="stat-n">{{ scheduled|selectattr('post_status','equalto','posted')|list|length }}</div>
+      <div class="stat-lbl">Posted</div>
+    </div>
+  </div>
+  <div class="stat-card sc-a">
+    <div class="stat-ico">🔁</div>
+    <div>
+      <div class="stat-n">{{ all_products|selectattr('recurring_enabled')|list|length }}</div>
+      <div class="stat-lbl">Recurring</div>
+    </div>
+  </div>
+  <div class="stat-card sc-r">
+    <div class="stat-ico">📦</div>
+    <div>
+      <div class="stat-n">{{ all_products|length }}</div>
+      <div class="stat-lbl">Products</div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Form -->
+<div class="ag-card">
+  <div class="ag-card-head">
+    <h6 class="ag-card-title"><i class="bi bi-calendar-plus"></i> Schedule a Post</h6>
+  </div>
+  <div class="ag-card-body">
+    <form method="POST" action="{{ url_for('set_scheduled_post', product_id=0) }}" id="schedForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-3 align-items-end">
+
+        <div class="col-lg-3 col-md-6">
+          <label class="ag-label">Product <span class="req">*</span></label>
+          <select class="form-select" id="prodSel" required onchange="onProdChange()">
+            <option value="">Choose a product…</option>
+            {% for p in all_products %}
+            <option value="{{ p.id }}"
+              data-tone="{{ p.post_tone or 'friendly' }}"
+              data-rec="{{ '1' if p.recurring_enabled else '0' }}"
+              data-days="{{ p.recurring_days or 7 }}"
+              data-sched="{{ p.scheduled_post_at.strftime('%Y-%m-%dT%H:%M') if p.scheduled_post_at else '' }}">
+              {{ p.name[:46] }}{% if p.name|length > 46 %}…{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <label class="ag-label">Date &amp; Time (PHT) <span class="req">*</span></label>
+          <input type="datetime-local" name="scheduled_post_at" id="schedAt"
+                 class="form-control" required>
+          <div class="form-text"><i class="bi bi-globe-asia-australia"></i> UTC+8 Philippine Time</div>
+        </div>
+
+        <div class="col-lg-2 col-md-4">
+          <label class="ag-label">Caption Tone</label>
+          <select name="post_tone" id="postTone" class="form-select">
+            <option value="friendly">🤝 Friendly</option>
+            <option value="urgent">🚨 Urgent</option>
+            <option value="professional">💼 Professional</option>
+            <option value="seasonal">🌱 Seasonal</option>
+            <option value="lowstock">⚠️ Low Stock</option>
+          </select>
+        </div>
+
+        <div class="col-lg-2 col-md-4">
+          <label class="ag-label">Recurring</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" name="recurring_enabled"
+                     id="recToggle" onchange="toggleRec()" role="switch">
+            </div>
+            <span id="recLbl" style="font-size:.8rem;font-weight:600;color:var(--ink4);">Off</span>
+          </div>
+          <div id="recDaysWrap" class="d-none" style="margin-top:6px;">
+            <div class="input-group input-group-sm">
+              <input type="number" name="recurring_days" id="recDays"
+                     class="form-control" min="1" max="365" value="7">
+              <span class="input-group-text">days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-4">
+          <button type="submit" class="btn-p" style="width:100%;justify-content:center;">
+            <i class="bi bi-calendar-check"></i> Save
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Queue -->
+<div class="ag-card">
+  <div class="ag-card-head">
+    <h6 class="ag-card-title"><i class="bi bi-list-task"></i> Post Queue</h6>
+    <span class="badge-pill bp-grn">{{ scheduled|length }} item{{ 's' if scheduled|length != 1 }}</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="ag-tbl">
+      <thead>
+        <tr>
+          <th style="padding-left:18px;">Product</th>
+          <th>Scheduled (PHT)</th>
+          <th>Countdown</th>
+          <th>Tone</th>
+          <th>Recurring</th>
+          <th>Last Posted</th>
+          <th>Status</th>
+          <th style="text-align:right;padding-right:18px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in scheduled %}
+        <tr>
+          <td style="padding-left:18px;">
+            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
+              {{ p.name[:36] }}{% if p.name|length > 36 %}…{% endif %}
+            </div>
+            <div style="font-size:.72rem;color:var(--ink4);">{{ p.category }}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;font-size:.84rem;color:var(--ink2);">
+              {{ p.scheduled_post_at.strftime('%b %d, %Y') }}
+            </div>
+            <div style="font-size:.76rem;color:var(--grn);font-weight:600;">
+              {{ p.scheduled_post_at.strftime('%I:%M %p') }}
+            </div>
+          </td>
+          <td>
+            {% if p.post_status == 'scheduled' and p.scheduled_post_at > now %}
+            <span class="cd-badge" data-ts="{{ p.scheduled_post_at.isoformat() }}">
+              <i class="bi bi-hourglass-split" style="font-size:.72rem;"></i>
+              <span class="cd-text">…</span>
+            </span>
+            {% elif p.post_status == 'posted' %}
+            <span style="font-size:.8rem;font-weight:700;color:var(--grn);">✅ Posted</span>
+            {% else %}
+            <span style="font-size:.8rem;font-weight:700;color:var(--red);">⏰ Overdue</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge-pill bp-mute" style="text-transform:capitalize;">{{ p.post_tone or 'friendly' }}</span>
+          </td>
+          <td>
+            {% if p.recurring_enabled %}
+            <span class="badge-pill bp-blu"><i class="bi bi-arrow-repeat" style="font-size:.65rem;"></i> Every {{ p.recurring_days }}d</span>
+            {% else %}
+            <span style="color:var(--ink4);font-size:.8rem;">Once</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;">
+            {% if p.last_posted_at %}
+            <span style="font-weight:600;color:var(--ink2);">{{ p.last_posted_at.strftime('%b %d') }}</span>
+            <span style="color:var(--ink4);margin-left:2px;">{{ p.last_posted_at.strftime('%H:%M') }}</span>
+            {% else %}
+            <span style="color:var(--ink4);">Never</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.post_status == 'scheduled' %}
+            <span class="ss ss-sched"><i class="bi bi-hourglass-split" style="font-size:.65rem;"></i> Scheduled</span>
+            {% elif p.post_status == 'posted' %}
+            <span class="ss ss-post"><i class="bi bi-check-circle" style="font-size:.65rem;"></i> Posted</span>
+            {% else %}
+            <span class="ss ss-idle">{{ p.post_status }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;padding-right:18px;">
+            <div style="display:flex;gap:5px;justify-content:flex-end;align-items:center;">
+              <form method="POST" action="{{ url_for('trigger_scheduled_post', product_id=p.id) }}" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-p sm" title="Post to Facebook now">
+                  <i class="bi bi-send-fill"></i>
+                </button>
+              </form>
+              <button class="btn-o sm" title="Edit"
+                onclick="editEntry({{ p.id }},'{{ p.scheduled_post_at.strftime('%Y-%m-%dT%H:%M') }}','{{ p.post_tone or 'friendly' }}',{{ '1' if p.recurring_enabled else '0' }},{{ p.recurring_days or 7 }})">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <form method="POST" action="{{ url_for('cancel_scheduled_post', product_id=p.id) }}"
+                    onsubmit="return confirm('Cancel scheduled post for &quot;{{ p.name|e }}&quot;?')" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-d sm" title="Cancel">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">
+            <div style="text-align:center;padding:48px 24px;color:var(--ink4);">
+              <i class="bi bi-calendar-x" style="font-size:2.5rem;display:block;margin-bottom:10px;opacity:.4;"></i>
+              <div style="font-weight:700;color:var(--ink3);margin-bottom:4px;">No scheduled posts yet</div>
+              <div style="font-size:.8rem;">Use the form above to schedule your first post</div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function onProdChange() {
+  var sel = document.getElementById('prodSel');
+  var id  = sel.value;
+  if (!id) return;
+  document.getElementById('schedForm').action = '/admin/scheduled/set/' + id;
+  var opt = sel.options[sel.selectedIndex];
+  document.getElementById('postTone').value = opt.dataset.tone || 'friendly';
+  if (opt.dataset.sched) document.getElementById('schedAt').value = opt.dataset.sched;
+  document.getElementById('recToggle').checked = opt.dataset.rec === '1';
+  document.getElementById('recDays').value = opt.dataset.days || 7;
+  toggleRec();
+}
+function toggleRec() {
+  var on = document.getElementById('recToggle').checked;
+  document.getElementById('recDaysWrap').classList.toggle('d-none', !on);
+  var lbl = document.getElementById('recLbl');
+  lbl.textContent   = on ? 'On' : 'Off';
+  lbl.style.color   = on ? 'var(--grn)' : 'var(--ink4)';
+  lbl.style.fontWeight = on ? '700' : '600';
+}
+function editEntry(pid, dt, tone, rec, days) {
+  document.getElementById('prodSel').value     = pid;
+  onProdChange();
+  document.getElementById('schedAt').value     = dt;
+  document.getElementById('postTone').value    = tone;
+  document.getElementById('recToggle').checked = !!rec;
+  document.getElementById('recDays').value     = days;
+  toggleRec();
+  document.querySelector('.ag-card').scrollIntoView({ behavior:'smooth' });
+}
+
+// Countdown timers
+function runCountdowns() {
+  document.querySelectorAll('.cd-badge[data-ts]').forEach(function(b) {
+    var diff = new Date(b.dataset.ts) - new Date();
+    var span = b.querySelector('.cd-text');
+    if (!span) return;
+    if (diff <= 0) { span.textContent = 'Posting soon…'; return; }
+    var d = Math.floor(diff / 86400000),
+        h = Math.floor((diff % 86400000) / 3600000),
+        m = Math.floor((diff % 3600000)  / 60000),
+        s = Math.floor((diff % 60000)    / 1000);
+    span.textContent = d > 0 ? d+'d '+h+'h '+m+'m' : h > 0 ? h+'h '+m+'m '+s+'s' : m+'m '+s+'s';
+  });
+}
+runCountdowns();
+setInterval(runCountdowns, 1000);
+document.addEventListener('DOMContentLoaded', toggleRec);
+</script>
+<style>
+.cd-badge {
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--blu-l);color:var(--blu);
+  padding:4px 10px;border-radius:100px;
+  font-size:.73rem;font-weight:700;border:1px solid #bfdbfe;
+}
+</style>
+{% endblock %}

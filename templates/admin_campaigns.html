@@ -1,0 +1,163 @@
+{% extends "admin_base.html" %}
+{% block title %}Campaigns — AgriFortress{% endblock %}
+{% block page_title %}Campaigns{% endblock %}
+
+{% block content %}
+
+{% if campaigns %}
+{% set na = campaigns|selectattr('status','equalto','Active')|list|length %}
+{% set ns = campaigns|selectattr('status','equalto','Scheduled')|list|length %}
+{% set ne = campaigns|selectattr('status','equalto','Ended')|list|length %}
+<div class="stat-row" style="margin-bottom:18px;">
+  <div class="stat-card sc-g">
+    <div class="stat-ico">🟢</div>
+    <div><div class="stat-n">{{ na }}</div><div class="stat-lbl">Active</div></div>
+  </div>
+  <div class="stat-card sc-b">
+    <div class="stat-ico">⏳</div>
+    <div><div class="stat-n">{{ ns }}</div><div class="stat-lbl">Scheduled</div></div>
+  </div>
+  <div class="stat-card sc-a">
+    <div class="stat-ico">✅</div>
+    <div><div class="stat-n">{{ ne }}</div><div class="stat-lbl">Ended</div></div>
+  </div>
+  <div class="stat-card sc-r">
+    <div class="stat-ico">📣</div>
+    <div><div class="stat-n">{{ campaigns|length }}</div><div class="stat-lbl">Total</div></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="ag-toolbar">
+  <div>
+    <div style="font-weight:700;font-size:.95rem;color:var(--ink);">All Campaigns</div>
+    <div style="font-size:.77rem;color:var(--ink4);margin-top:2px;">Discount campaigns that auto-post to Facebook</div>
+  </div>
+  <a href="{{ url_for('add_campaign') }}" class="btn-p">
+    <i class="bi bi-plus-lg"></i> New Campaign
+  </a>
+</div>
+
+{% if campaigns %}
+<div class="ag-card">
+  <div style="overflow-x:auto;">
+    <table class="ag-tbl">
+      <thead>
+        <tr>
+          <th style="padding-left:18px;">Campaign</th>
+          <th>Discount</th>
+          <th>Target</th>
+          <th>Schedule</th>
+          <th class="text-center">Auto-Post</th>
+          <th>Status</th>
+          <th style="text-align:right;padding-right:18px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in campaigns %}
+        <tr>
+          <td style="padding-left:18px;">
+            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">{{ c.name }}</div>
+            {% if c.type %}
+            <span style="font-size:.67rem;font-weight:600;background:var(--surf3);color:var(--ink3);padding:2px 7px;border-radius:4px;margin-top:3px;display:inline-block;">
+              {{ c.type }}
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-family:var(--serif);font-size:1.3rem;font-weight:800;color:var(--red);line-height:1;">{{ c.discount_percentage|int }}</span>
+            <span style="font-size:.7rem;font-weight:700;color:var(--red);">% OFF</span>
+          </td>
+          <td>
+            {% if c.category_target %}
+            <span class="badge-pill bp-grn" style="margin-bottom:2px;">
+              <i class="bi bi-tag" style="font-size:.62rem;"></i>{{ c.category_target }}
+            </span>
+            {% endif %}
+            {% if c.crop_target %}
+            <span class="badge-pill bp-amb">
+              <i class="bi bi-seedling" style="font-size:.62rem;"></i>{{ c.crop_target }}
+            </span>
+            {% endif %}
+            {% if not c.category_target and not c.crop_target %}
+            <span style="font-size:.8rem;color:var(--ink4);">All products</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="font-size:.8rem;font-weight:700;color:var(--grn);">
+              {{ c.start_date.strftime('%b %d, %Y') if c.start_date else '—' }}
+            </div>
+            <div style="font-size:.75rem;color:var(--ink4);margin-top:1px;">
+              → {{ c.end_date.strftime('%b %d, %Y') if c.end_date else '—' }}
+            </div>
+          </td>
+          <td class="text-center">
+            {% if c.auto_post %}
+            <i class="bi bi-facebook" style="color:#1877f2;font-size:.95rem;"></i>
+            <i class="bi bi-check-circle-fill" style="color:var(--grn);font-size:.68rem;margin-left:2px;"></i>
+            {% else %}
+            <i class="bi bi-x-circle" style="color:var(--bdr2);font-size:.95rem;"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% set sc = c.status|lower %}
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700;" class="cs-{{ sc }}">
+              <span class="cs-dot"></span>{{ c.status }}
+            </span>
+          </td>
+          <td style="text-align:right;padding-right:18px;">
+            <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">
+              {% if c.status != 'Ended' %}
+              <form method="POST" action="{{ url_for('activate_campaign', campaign_id=c.id) }}"
+                    onsubmit="return confirm('Activate &quot;{{ c.name|e }}&quot;?\n\nThis will apply {{ c.discount_percentage|int }}% discount and post matching products to Facebook.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-p sm">
+                  <i class="bi bi-facebook"></i>
+                  {% if c.status == 'Active' %}Re-Post{% else %}Activate{% endif %}
+                </button>
+              </form>
+              {% endif %}
+              <form method="POST" action="{{ url_for('delete_campaign', campaign_id=c.id) }}"
+                    onsubmit="return confirm('Delete campaign &quot;{{ c.name|e }}&quot;? This cannot be undone.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-d sm" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="ag-card">
+  <div style="text-align:center;padding:56px 24px;">
+    <div style="font-size:3rem;margin-bottom:12px;opacity:.5;">📣</div>
+    <h5 style="font-weight:700;color:var(--ink);margin-bottom:8px;">No campaigns yet</h5>
+    <p style="color:var(--ink4);max-width:340px;margin:0 auto 22px;font-size:.875rem;">
+      Create a campaign to automatically apply discounts and post products to Facebook.
+    </p>
+    <a href="{{ url_for('add_campaign') }}" class="btn-p">
+      <i class="bi bi-plus-lg"></i> Create First Campaign
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Info strip -->
+<div style="background:var(--grn-l);border:1px solid var(--grn-m);border-left:4px solid var(--grn);border-radius:var(--r-sm);padding:14px 18px;margin-top:6px;">
+  <div style="font-weight:700;color:var(--grn);font-size:.8rem;margin-bottom:8px;">
+    <i class="bi bi-info-circle me-2"></i>How Campaigns Work
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:.79rem;color:var(--ink2);">
+    <div><strong>🟢 Activate &amp; Post</strong><br>Applies discount and posts all matching products to your Facebook Page immediately.</div>
+    <div><strong>⏰ Auto-Scheduled</strong><br>Campaigns with a future start date activate automatically — checked every 5 minutes.</div>
+    <div><strong>📘 Requirements</strong><br>Campaign Auto-Post must be ON, and each product's Auto-Post Enabled must also be checked.</div>
+  </div>
+</div>
+
+{% endblock %}
